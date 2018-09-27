@@ -15,15 +15,26 @@ titanic.full <- rbind(titanic.train,titanic.test)
 #Data cleaning by eliminating empty lines
 titanic.full[titanic.full$Embarked=='',"Embarked"]<-'S'
 
-age.median<-median(titanic.full$Age,na.rm=TRUE)
+#age.median<-median(titanic.full$Age,na.rm=TRUE)
 
-titanic.full[is.na(titanic.full$Age),"Age"] <- age.median 
+#titanic.full[is.na(titanic.full$Age),"Age"] <- age.median 
 
-#Remove missing values from fare
+#Predict missing values from fare
 fare.median<-median(titanic.full$Fare,na.rm=TRUE)
-
 titanic.full[is.na(titanic.full$Fare),"Fare"]<- fare.median
 
+#Predict missing values from Age
+upper.whisker<-boxplot.stats(titanic.full$Age)$stats[5]
+
+outlier.filter<-titanic.full$Age< upper.whisker
+
+Age.equation="Age ~ Pclass +Sex + Fare +SibSp +Parch + Embarked"
+Age.model<-lm(formula=Age.equation , data=titanic.full[outlier.filter,]) 
+
+age.row<-titanic.full[is.na(titanic.full$Age),c("Pclass","Sex","Fare","SibSp","Parch","Embarked")]
+age.predictions<-predict(Age.model,newdata =age.row)
+
+titanic.full[is.na(titanic.full$Age),"Age"]<-age.predictions
 #Categorical Casting
 titanic.full$Pclass<-as.factor(titanic.full$Pclass)
 titanic.full$Sex<-as.factor(titanic.full$Sex)
@@ -51,5 +62,5 @@ PassengerId<-titanic.test$PassengerId
 output.df<-as.data.frame(PassengerId)
 output.df$Survived<-Survived
 
-write.csv(output.df,file="kaggle_submission.csv",row.names=FALSE)
+write.csv(output.df,file="kaggle_submission2.csv",row.names=FALSE)
  
